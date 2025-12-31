@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOMO 新春賀卡 DIY</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: sans-serif; background-color: #0c152a; color: #fff; padding: 20px; text-align: center; }
+        h2 { color: #D4AF37; margin-bottom: 10px; }
+        
+        /* 畫布容器 */
+        .canvas-container { margin: 20px auto; max-width: 100%; overflow: hidden; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        canvas { max-width: 100%; height: auto; display: block; }
+
+        /* 輸入區 */
+        .controls { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        input, select { padding: 10px; border-radius: 5px; border: 1px solid #D4AF37; background: #1e293b; color: white; font-size: 16px; }
+        
+        /* 按鈕 */
+        .btn { padding: 12px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; width: 100%; }
+        .btn-preview { background-color: #334155; color: #fff; }
+        .btn-download { background-color: #D4AF37; color: #0c152a; margin-top: 10px; }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <h2>🧨 新春賀卡 DIY</h2>
+    <p style="color:#aaa; font-size:12px;">輸入名字，製作專屬賀卡送親友！</p>
+
+    <div class="controls">
+        <select id="bgSelect" onchange="drawCard()">
+            <option value="bg1">款式一：金蛇迎春</option>
+            <option value="bg2">款式二：富貴滿堂</option>
+            <option value="bg3">款式三：財源滾滾</option>
+        </select>
+        
+        <input type="text" id="userName" placeholder="請輸入您的名字 (例如: 小摩)" maxlength="6" oninput="drawCard()">
+        
+        <select id="greetingSelect" onchange="drawCard()">
+            <option value="祝您 2025 蛇年行大運！">祝您 2025 蛇年行大運！</option>
+            <option value="新的一年，財富翻倍！">新的一年，財富翻倍！</option>
+            <option value="股市長紅，獲利滿滿！">股市長紅，獲利滿滿！</option>
+        </select>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="myCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <button id="btn-save" class="btn btn-download" onclick="downloadImage()">⬇️ 下載圖片傳給好友</button>
+    <p style="font-size: 12px; color: #aaa; margin-top: 10px;">(下載後，可直接在 LINE 傳送圖片給親友)</p>
+
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 底圖連結 (這裡先用佔位圖，實作時換成你的圖片 URL，需支援 CORS)
+        const bgImages = {
+            'bg1': 'https://via.placeholder.com/800x600/800000/D4AF37?text=Background+1', 
+            'bg2': 'https://via.placeholder.com/800x600/0c152a/D4AF37?text=Background+2',
+            'bg3': 'https://via.placeholder.com/800x600/D4AF37/000000?text=Background+3'
+        };
+
+        let currentBg = new Image();
+        // 解決跨域問題 (重要：你的圖片伺服器必須允許 Access-Control-Allow-Origin)
+        currentBg.crossOrigin = "Anonymous"; 
+
+        // 初始化
+        window.onload = function() {
+            // 初始化 LIFF (選擇性，若要抓取用戶名字自動填入)
+            // liff.init({ liffId: "YOUR_LIFF_ID" }).then(() => { ... });
+            
+            currentBg.src = bgImages['bg1'];
+            currentBg.onload = () => drawCard();
+        };
+
+        // 核心繪圖邏輯
+        function drawCard() {
+            const name = document.getElementById('userName').value || "您的名字";
+            const greeting = document.getElementById('greetingSelect').value;
+            const bgKey = document.getElementById('bgSelect').value;
+
+            // 1. 如果換了背景，重新載入
+            if (!currentBg.src.includes(bgImages[bgKey])) {
+                currentBg.src = bgImages[bgKey];
+                currentBg.onload = () => drawContent(name, greeting);
+            } else {
+                drawContent(name, greeting);
+            }
+        }
+
+        function drawContent(name, greeting) {
+            // 清除畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 1. 畫底圖
+            ctx.drawImage(currentBg, 0, 0, canvas.width, canvas.height);
+
+            // 2. 設定文字樣式 (祝福語)
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 40px sans-serif";
+            ctx.textAlign = "center";
+            ctx.shadowColor = "rgba(0,0,0,0.5)";
+            ctx.shadowBlur = 5;
+            // 畫在中間
+            ctx.fillText(greeting, canvas.width / 2, canvas.height / 2 + 50);
+
+            // 3. 設定文字樣式 (署名)
+            ctx.fillStyle = "#D4AF37"; // 金色
+            ctx.font = "bold 30px sans-serif";
+            ctx.textAlign = "right";
+            // 畫在右下角
+            ctx.fillText("— " + name + " 敬賀", canvas.width - 50, canvas.height - 50);
+            
+            // 4. (選用) 畫上你的品牌 LOGO 或文字
+            ctx.font = "20px sans-serif";
+            ctx.fillStyle = "rgba(255,255,255,0.5)";
+            ctx.textAlign = "left";
+            ctx.fillText("MOMO 財商智庫", 20, canvas.height - 20);
+        }
+
+        // 下載圖片功能
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'MOMO_NewYear_Card.png';
+            // 將 Canvas 轉為圖片連結
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }
+    </script>
+</body>
+</html>
